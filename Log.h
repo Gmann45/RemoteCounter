@@ -28,6 +28,15 @@ class Log {
 			return inst_;
 		}
 
+		void debug(const char *msg, ...) {
+			char buf[512];
+			va_list args;
+			va_start(args, msg);
+			vsnprintf(buf, sizeof(buf), msg, args);
+			syslog(LOG_DEBUG, buf);
+			va_end(args);
+		}
+
 		void info(const char *msg, ...) {
 			char buf[512];
 			va_list args;
@@ -36,6 +45,61 @@ class Log {
 			syslog(LOG_INFO, buf);
 			va_end(args);
 		}
+
+		void notice(const char *msg, ...) {
+			char buf[512];
+			va_list args;
+			va_start(args, msg);
+			vsnprintf(buf, sizeof(buf), msg, args);
+			syslog(LOG_NOTICE, buf);
+			va_end(args);
+		}
+
+		void warn(const char *msg, ...) {
+			char buf[512];
+			va_list args;
+			va_start(args, msg);
+			vsnprintf(buf, sizeof(buf), msg, args);
+			syslog(LOG_WARNING, buf);
+			va_end(args);
+		}
+
+		void err(const char *msg, ...) {
+			char buf[512];
+			va_list args;
+			va_start(args, msg);
+			vsnprintf(buf, sizeof(buf), msg, args);
+			syslog(LOG_ERR, buf);
+			va_end(args);
+		}
+
+		void crit(const char *msg, ...) {
+			char buf[512];
+			va_list args;
+			va_start(args, msg);
+			vsnprintf(buf, sizeof(buf), msg, args);
+			syslog(LOG_CRIT, buf);
+			va_end(args);
+		}
+
+		void alert(const char *msg, ...) {
+			char buf[512];
+			va_list args;
+			va_start(args, msg);
+			vsnprintf(buf, sizeof(buf), msg, args);
+			syslog(LOG_ALERT, buf);
+			va_end(args);
+		}
+
+		void emerg(const char *msg, ...) {
+			char buf[512];
+			va_list args;
+			va_start(args, msg);
+			vsnprintf(buf, sizeof(buf), msg, args);
+			syslog(LOG_EMERG, buf);
+			va_end(args);
+		}
+
 
 	~Log() {
 		delete progname;
