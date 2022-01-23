@@ -3,17 +3,20 @@
 #include <netinet/in.h>
 #include <iostream>
 #include <new>
-#include "Counter.h"
 #include "Log.h"
+#include "Server.h"
+
+Log* Log::inst_ = nullptr;
+char* Log::progname = nullptr;
 
 int main(int argc, char **argv)
 {
-	Log *logger = Log::getInstance();
-	Counter *count_p = new Counter(0);
+	Log *log = Log::getInstance();
+	Server *server = new Server();
 
-	logger->info("test");
+	log->info("Start up");
 
-	closelog();
-	delete count_p;
+	server->initialize();
+
 
 }

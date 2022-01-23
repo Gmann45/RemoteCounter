@@ -1,3 +1,5 @@
+#ifndef __COUNTER_H__
+#define __COUNTER_H__
 
 using namespace std;
 
@@ -26,3 +28,6 @@ class Counter {
 	private:
 		int m_Count;
 };
+
+
+#endif

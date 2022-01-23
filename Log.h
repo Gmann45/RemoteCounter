@@ -1,14 +1,17 @@
+#ifndef __LOG_H__
+#define __LOG_H__
+
 #include <syslog.h>
 #include <stdarg.h>
 #include <unistd.h>
 #include <libgen.h>
 #include <string.h>
+#include <stdio.h>
 
 using namespace std;
 
 class Log {
 	public:
-
 		static Log* getInstance() {
 			if (inst_ == NULL) {
 				char path[128];
@@ -102,6 +105,7 @@ class Log {
 
 
 	~Log() {
+		delete inst_;
 		delete progname;
 	}
 
@@ -116,5 +120,4 @@ class Log {
 
 };
 
-Log* Log::inst_ = NULL;
-char* Log::progname = NULL;
+#endif

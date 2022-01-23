@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 project(RemoteCounter)
 
-add_executable(RemoteCounter main.cpp)
+add_executable(RemoteCounter main.cpp Server.cpp)
 
 #configure_file(AppConfig.h.in AppConfig.h)
 
