@@ -2,10 +2,10 @@
 #define __SERVER_H__
 
 #include <sys/epoll.h>
+#include <vector>
+#include <string>
 #include "Log.h"
 #include "Counter.h"
-
-using namespace std;
 
 #define SERVER__PORT			8089
 
@@ -16,13 +16,19 @@ class Server {
 		void cleanUp(void);
 		int getServerSock(void);
 		int getMaxConnections(void);
-		bool handleCommand(char *buf, int len);
+		void addConnection(int sock);
+		bool removeConnection(int sock);
+		bool handleCommand(int sock, char *buf);
 		Server();
 		~Server();
 	private:
 		Log *log;
 		int serverSock;
+		std::vector<int> connections;
 		const int MAX_CONNECTIONS = 1024;
+		const std::string SERVER__CMD__INCR = "INCR";
+		const std::string SERVER__CMD__DECR = "DECR";
+		const std::string SERVER__CMD__OUTPUT = "OUTPUT";
 };
 
 #endif

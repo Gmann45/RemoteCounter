@@ -2,6 +2,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <algorithm>
 #include "Server.h"
 
 Server::Server()
@@ -71,8 +72,47 @@ int Server::getMaxConnections(void)
 	return MAX_CONNECTIONS;
 }
 
-bool Server::handleCommand(char *buf, int len)
+void Server::addConnection(int sock)
 {
+	connections.push_back(sock);
+}
+
+bool Server::removeConnection(int sock)
+{
+	std::vector<int>::iterator it;
+
+	it = find(connections.begin(), connections.end(), sock);
+	if (it == connections.end()) {
+		return false;
+	}
+	connections.erase(it);
+
+	return true;
+}
+
+bool Server::handleCommand(int sock, char *buf)
+{
+	std::string cmd(buf);
+	std::size_t found;
+
+	found = cmd.find(SERVER__CMD__INCR);
+	if (found != std::string::npos) {
+
+	}
+
+	found = cmd.find(SERVER__CMD__DECR);
+	if (found != std::string::npos) {
+
+	}
+
+	found = cmd.find(SERVER__CMD__OUTPUT);
+	if (found != std::string::npos) {
+
+	}
+	else {
+		log->info("Unknown command \"%s\" sent to server", buf);
+	}
+
 	return true;
 }
 
