@@ -3,6 +3,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <algorithm>
+#include <sstream>
 #include "Server.h"
 
 Server::Server()
@@ -50,6 +51,8 @@ bool Server::init(int port)
 		goto serverFail;
 	}
 
+	log->info("Counter value : %d", counter->getCount());
+
 	log->info("Successfully initialized server");
 
 	return true;
@@ -90,24 +93,54 @@ bool Server::removeConnection(int sock)
 	return true;
 }
 
+void Server::updateCountOnConnections(void)
+{
+	ssize_t nBytes;
+	std::string msg(std::to_string(counter->getCount()));
+
+	log->info("Updating sockets with value : %s", msg.c_str());
+
+	for (int sock : connections) {
+		nBytes = send(sock, msg.c_str(), msg.length() + 1, 0);
+		if (nBytes <= 0) {
+			log->warn("Failed to send data on sock %d", sock);
+		}
+	}
+}
+
 bool Server::handleCommand(int sock, char *buf)
 {
 	std::string cmd(buf);
-	std::size_t found;
+	std::stringstream ss(cmd);
+	std::string tmpString;
+	int tmpInt;
 
-	found = cmd.find(SERVER__CMD__INCR);
-	if (found != std::string::npos) {
+	log->info("Command : %s", cmd.c_str());
 
+	if (cmd.find(SERVER__CMD__INCR) != std::string::npos) {
+		log->info("Handling INCR command");
+		if (cmd.find("\r\n", cmd.length() - 2) != std::string::npos) { // Validation check
+			log->info("Contains escape chars");
+			while(!ss.eof()) {
+				ss >> tmpString;
+				if (std::stringstream(tmpString) >> tmpInt) { // Contains valid integer
+					log->info("Found int %d in command", tmpInt);
+					counter->incCount(tmpInt);
+
+					updateCountOnConnections();
+				}
+			}
+		}
 	}
+	else if (cmd.find(SERVER__CMD__DECR) != std::string::npos) {
+		if (cmd.find("\r\n", cmd.length() - 2) != std::string::npos) {
 
-	found = cmd.find(SERVER__CMD__DECR);
-	if (found != std::string::npos) {
-
+		}
 	}
+	else if (cmd.find(SERVER__CMD__OUTPUT) != std::string::npos) {
+		if (cmd.find("\r\n", cmd.length() - 2) != std::string::npos) {
 
-	found = cmd.find(SERVER__CMD__OUTPUT);
-	if (found != std::string::npos) {
-
+		}
 	}
 	else {
 		log->info("Unknown command \"%s\" sent to server", buf);

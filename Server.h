@@ -26,9 +26,10 @@ class Server {
 		int serverSock;
 		std::vector<int> connections;
 		const int MAX_CONNECTIONS = 1024;
-		const std::string SERVER__CMD__INCR = "INCR";
-		const std::string SERVER__CMD__DECR = "DECR";
-		const std::string SERVER__CMD__OUTPUT = "OUTPUT";
+		const std::string SERVER__CMD__INCR = "INCR ";
+		const std::string SERVER__CMD__DECR = "DECR ";
+		const std::string SERVER__CMD__OUTPUT = "OUTPUT ";
+		void updateCountOnConnections(void);
 };
 
 #endif

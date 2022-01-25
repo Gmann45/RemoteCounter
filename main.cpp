@@ -106,6 +106,8 @@ int main(int argc, char **argv)
 				char buf[32];
 				int nBytes;
 
+				memset(buf, 0, sizeof(buf));
+
 				nBytes = recv(connSock, buf, sizeof(buf), 0);
 				if (nBytes > 0) {
 					if (!server->handleCommand(connSock, buf)) {
