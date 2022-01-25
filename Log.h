@@ -13,12 +13,17 @@ using namespace std;
 class Log {
 	public:
 		static Log* getInstance() {
-			if (inst_ == NULL) {
+			if (inst_ == nullptr) {
 				char path[128];
+				int len;
 
 				/* Get the program name */
-				if (readlink("/proc/self/exe", path, sizeof(path)) == -1) {
-					return NULL;
+				if ((len = readlink("/proc/self/exe", path, sizeof(path))) == -1) {
+					return nullptr;
+				}
+
+				if (len < sizeof(path)) { // Add terminating character
+					path[len] = '\0';
 				}
 
 				/* Allocate memory for name */

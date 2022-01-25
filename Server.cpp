@@ -15,7 +15,7 @@ Server::~Server()
 	cleanUp();
 }
 
-bool Server::initialize(int port)
+bool Server::init(int port)
 {
 	struct sockaddr_in serverSockAddr;
 
@@ -37,7 +37,7 @@ bool Server::initialize(int port)
 		goto serverFail;
 	}
 
-	if (listen(serverSock, SERVER__MAX_CONNECTIONS) == -1) {
+	if (listen(serverSock, MAX_CONNECTIONS) == -1) {
 		log->warn("Failed to listen to socket connections");
 		goto serverFail;
 	}
@@ -49,6 +49,8 @@ bool Server::initialize(int port)
 		goto serverFail;
 	}
 
+	log->info("Successfully initialized server");
+
 	return true;
 
 serverFail:
@@ -57,6 +59,21 @@ serverFail:
 	}
 
 	return false;
+}
+
+int Server::getServerSock(void)
+{
+	return serverSock;
+}
+
+int Server::getMaxConnections(void)
+{
+	return MAX_CONNECTIONS;
+}
+
+bool Server::handleCommand(char *buf, int len)
+{
+	return true;
 }
 
 void Server::cleanUp(void)
