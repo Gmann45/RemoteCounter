@@ -22,9 +22,11 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	log->info("Start up");
-
-	server->init();
+	/* Initialize server */
+	if (!server->init()) {
+		log->err("Failed to initialize server");
+		exit(1);
+	}
 
 	/* Setup epoll events */
 	epollFd = epoll_create1(0);
@@ -95,6 +97,7 @@ int main(int argc, char **argv)
 				delete[] events;
 				events = tmpEvents;
 				numEvents++;
+				server->addConnection(connSock);
 
 				log->info("Added new socket : %d", connSock);
 			}
@@ -103,14 +106,21 @@ int main(int argc, char **argv)
 				char buf[32];
 				int nBytes;
 
+				memset(buf, 0, sizeof(buf));
+
 				nBytes = recv(connSock, buf, sizeof(buf), 0);
 				if (nBytes > 0) {
-					if (!server->handleCommand(buf, sizeof(buf))) {
+					if (!server->handleCommand(connSock, buf)) {
 						log->warn("Failed to successfully handle data");
 					}
 				}
 				else {
 					close(connSock);
+
+					/* Remove connection record in server */
+					if (!server->removeConnection(connSock)) {
+						log->warn("Failed remove connection");
+					}
 
 					/* Dencrease event count */
 					struct epoll_event *tmpEvents = new epoll_event[numEvents-1];

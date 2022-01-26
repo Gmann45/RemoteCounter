@@ -2,6 +2,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <algorithm>
+#include <sstream>
 #include "Server.h"
 
 Server::Server()
@@ -49,6 +51,8 @@ bool Server::init(int port)
 		goto serverFail;
 	}
 
+	log->info("Counter value : %d", counter->getCount());
+
 	log->info("Successfully initialized server");
 
 	return true;
@@ -71,8 +75,96 @@ int Server::getMaxConnections(void)
 	return MAX_CONNECTIONS;
 }
 
-bool Server::handleCommand(char *buf, int len)
+void Server::addConnection(int sock)
 {
+	connections.push_back(sock);
+}
+
+bool Server::removeConnection(int sock)
+{
+	std::vector<int>::iterator it;
+
+	it = find(connections.begin(), connections.end(), sock);
+	if (it == connections.end()) {
+		return false;
+	}
+	connections.erase(it);
+
+	return true;
+}
+
+void Server::updateCountOnSocket(int sock)
+{
+	ssize_t nBytes;
+	std::string msg(std::to_string(counter->getCount()));
+	msg += "\r\n";
+
+	nBytes = send(sock, msg.c_str(), msg.length() + 1, 0);
+	if (nBytes <= 0) {
+		log->warn("Failed to send data on sock %d", sock);
+	}
+}
+
+void Server::updateCountOnConnections(void)
+{
+	ssize_t nBytes;
+	std::string msg(std::to_string(counter->getCount()));
+	msg += "\r\n";
+
+	for (int sock : connections) {
+		nBytes = send(sock, msg.c_str(), msg.length() + 1, 0);
+		if (nBytes <= 0) {
+			log->warn("Failed to send data on sock %d", sock);
+		}
+	}
+}
+
+bool Server::handleCommand(int sock, char *buf)
+{
+	std::string cmd(buf);
+	std::stringstream ss(cmd);
+	std::string tmpString;
+	int tmpInt;
+
+	log->info("Command : %s", cmd.c_str());
+
+	if (cmd.find(SERVER__CMD__INCR) != std::string::npos) {
+		if (cmd.find("\r\n", cmd.length() - 2) != std::string::npos) { // Validation check
+			while(!ss.eof()) {
+				ss >> tmpString;
+				if (std::stringstream(tmpString) >> tmpInt) { // Contains valid integer
+					counter->incCount(tmpInt);
+
+					updateCountOnConnections();
+
+					break;
+				}
+			}
+		}
+	}
+	else if (cmd.find(SERVER__CMD__DECR) != std::string::npos) {
+		if (cmd.find("\r\n", cmd.length() - 2) != std::string::npos) { // Validation check
+			while(!ss.eof()) {
+				ss >> tmpString;
+				if (std::stringstream(tmpString) >> tmpInt) { // Contains valid integer
+					counter->decCount(tmpInt);
+
+					updateCountOnConnections();
+
+					break;
+				}
+			}
+		}
+	}
+	else if (cmd.find(SERVER__CMD__OUTPUT) != std::string::npos) {
+		if (cmd.find("\r\n", cmd.length() - 2) != std::string::npos) { // Validation check
+			updateCountOnSocket(sock);
+		}
+	}
+	else {
+		log->info("Unknown command \"%s\" sent to server", buf);
+	}
+
 	return true;
 }
 

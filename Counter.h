@@ -1,32 +1,30 @@
 #ifndef __COUNTER_H__
 #define __COUNTER_H__
 
-using namespace std;
-
 class Counter {
 	public:
-		Counter(int Count) : m_Count(Count) {
-
+		Counter(int count) {
+			this->count = count;
 		}
 
 		int getCount(void) {
-			return m_Count;
+			return count;
 		}
 
-		void setCount(int Count) {
-			m_Count = Count;
+		void setCount(int count) {
+			this->count = count;
 		}
 
-		void incCount(void) {
-			m_Count++;
+		void incCount(int count = 1) {
+			this->count += count;
 		}
 
-		void decCount(void) {
-			m_Count--;
+		void decCount(int count = 1) {
+			this->count -= count;
 		}
 
 	private:
-		int m_Count;
+		int count;
 };
 
 
