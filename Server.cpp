@@ -93,12 +93,23 @@ bool Server::removeConnection(int sock)
 	return true;
 }
 
+void Server::updateCountOnSocket(int sock)
+{
+	ssize_t nBytes;
+	std::string msg(std::to_string(counter->getCount()));
+	msg += "\r\n";
+
+	nBytes = send(sock, msg.c_str(), msg.length() + 1, 0);
+	if (nBytes <= 0) {
+		log->warn("Failed to send data on sock %d", sock);
+	}
+}
+
 void Server::updateCountOnConnections(void)
 {
 	ssize_t nBytes;
 	std::string msg(std::to_string(counter->getCount()));
-
-	log->info("Updating sockets with value : %s", msg.c_str());
+	msg += "\r\n";
 
 	for (int sock : connections) {
 		nBytes = send(sock, msg.c_str(), msg.length() + 1, 0);
@@ -118,28 +129,36 @@ bool Server::handleCommand(int sock, char *buf)
 	log->info("Command : %s", cmd.c_str());
 
 	if (cmd.find(SERVER__CMD__INCR) != std::string::npos) {
-		log->info("Handling INCR command");
 		if (cmd.find("\r\n", cmd.length() - 2) != std::string::npos) { // Validation check
-			log->info("Contains escape chars");
 			while(!ss.eof()) {
 				ss >> tmpString;
 				if (std::stringstream(tmpString) >> tmpInt) { // Contains valid integer
-					log->info("Found int %d in command", tmpInt);
 					counter->incCount(tmpInt);
 
 					updateCountOnConnections();
+
+					break;
 				}
 			}
 		}
 	}
 	else if (cmd.find(SERVER__CMD__DECR) != std::string::npos) {
-		if (cmd.find("\r\n", cmd.length() - 2) != std::string::npos) {
+		if (cmd.find("\r\n", cmd.length() - 2) != std::string::npos) { // Validation check
+			while(!ss.eof()) {
+				ss >> tmpString;
+				if (std::stringstream(tmpString) >> tmpInt) { // Contains valid integer
+					counter->decCount(tmpInt);
 
+					updateCountOnConnections();
+
+					break;
+				}
+			}
 		}
 	}
 	else if (cmd.find(SERVER__CMD__OUTPUT) != std::string::npos) {
-		if (cmd.find("\r\n", cmd.length() - 2) != std::string::npos) {
-
+		if (cmd.find("\r\n", cmd.length() - 2) != std::string::npos) { // Validation check
+			updateCountOnSocket(sock);
 		}
 	}
 	else {
