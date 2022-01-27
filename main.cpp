@@ -3,6 +3,7 @@
 #include <sys/epoll.h>
 #include <netinet/in.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <iostream>
 #include <new>
 #include "Log.h"
@@ -10,13 +11,45 @@
 
 Log* Log::inst_ = nullptr;
 char* Log::progname = nullptr;
+Server* server;
+
+static void _termSignalHandler(int sig)
+{
+	/* Server cleanup */
+	if (server) {
+		server->cleanUp();
+	}
+
+	exit(0);
+}
+
+static bool _initSignalHandler(void)
+{
+	struct sigaction sa;
+
+	sa.sa_handler = _termSignalHandler;
+	sigemptyset(&sa.sa_mask);
+
+	if (sigaction(SIGTERM, &sa, NULL) == -1) {
+		return false;
+	}
+
+	return true;
+}
 
 int main(int argc, char **argv)
 {
 	Log *log = Log::getInstance();
 	int numFds, epollFd, numEvents, addEvents = 0;
 	struct epoll_event event, *events;
-	Server *server = new Server();
+
+	/* Setup signal handler */
+	if (!_initSignalHandler()) {
+		log->err("Failed to initialize term signal handler");
+		exit(1);
+	}
+
+	server = new Server();
 	if (server == nullptr) {
 		log->err("Failed to create server");
 		exit(1);

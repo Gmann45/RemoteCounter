@@ -1,10 +1,13 @@
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <algorithm>
 #include <sstream>
 #include "Server.h"
+
+#define SERVER__BIND_TIMEOUT_S			60
 
 Server::Server()
 {
@@ -20,6 +23,7 @@ Server::~Server()
 bool Server::init(int port)
 {
 	struct sockaddr_in serverSockAddr;
+	int bindTime = 0;
 
 	/* Setup application logging */
 	log = Log::getInstance();
@@ -34,9 +38,20 @@ bool Server::init(int port)
 	serverSockAddr.sin_family = AF_INET;
 	serverSockAddr.sin_port = htons(port);
 	serverSockAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	if (bind(serverSock, (struct sockaddr*) &serverSockAddr, sizeof(serverSockAddr)) == -1) {
-		log->warn("Failed to bind socket");
-		goto serverFail;
+	log->info("Trying to bind socket...");
+	while (1) {
+		if (bind(serverSock, (struct sockaddr*) &serverSockAddr, sizeof(serverSockAddr)) == -1) {
+			if (bindTime++ > SERVER__BIND_TIMEOUT_S) {
+				log->warn("Failed to bind socket");
+				goto serverFail;
+			}
+		}
+		else {
+			log->warn("Successfully bound socket");
+			break;
+		}
+
+		sleep(1);
 	}
 
 	if (listen(serverSock, MAX_CONNECTIONS) == -1) {
@@ -174,4 +189,13 @@ void Server::cleanUp(void)
 	if (close(serverSock) == -1) {
 		log->warn("Failed to close server socket");
 	}
+
+	/* Close all open sockets */
+	for (int sock : connections) {
+		if (close(sock) == -1) {
+			log->warn("Failed to close socket %d", sock);
+		}
+	}
+
+	log->info("Cleaned up server");
 }
