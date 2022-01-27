@@ -9,16 +9,14 @@
 #include "Log.h"
 #include "Server.h"
 
-Log* Log::inst_ = nullptr;
+Log* Log::inst_ = nullptr; // Init Log class variables
 char* Log::progname = nullptr;
-Server* server;
+Server* server; // Server is global so it can be used in the sig handler
 
 static void _termSignalHandler(int sig)
 {
 	/* Server cleanup */
-	if (server) {
-		server->cleanUp();
-	}
+	delete server;
 
 	exit(0);
 }
@@ -91,7 +89,7 @@ int main(int argc, char **argv)
 		}
 
 		for (int i = 0; i < numFds; i++) {
-			if (events[i].data.fd == server->getServerSock()) {
+			if (events[i].data.fd == server->getServerSock()) { // New connection starting
 				int connSock;
 
 				if (numEvents + 1 > server->getMaxConnections()) {
@@ -99,13 +97,13 @@ int main(int argc, char **argv)
 					break;
 				}
 
-				connSock = accept(server->getServerSock(), NULL, NULL);
+				connSock = accept(server->getServerSock(), NULL, NULL); // Accept socket
 				if (connSock == -1) {
 					log->warn("Failed to accept incoming socket");
 					break;
 				}
 
-				if (fcntl(connSock, F_SETFL, O_NONBLOCK) == -1) {
+				if (fcntl(connSock, F_SETFL, O_NONBLOCK) == -1) { // Set to non-blocking
 					log->warn("Failed to set socket to non-blocking");
 					close(connSock);
 					break;
@@ -113,7 +111,7 @@ int main(int argc, char **argv)
 
 				event.events = EPOLLIN | EPOLLET;
 				event.data.fd = connSock;
-				if (epoll_ctl(epollFd, EPOLL_CTL_ADD, connSock, &event) == -1) {
+				if (epoll_ctl(epollFd, EPOLL_CTL_ADD, connSock, &event) == -1) { // Add to epoll
 					log->warn("Failed to add socket to epoll");
 					close(connSock);
 					break;
@@ -141,13 +139,13 @@ int main(int argc, char **argv)
 
 				memset(buf, 0, sizeof(buf));
 
-				nBytes = recv(connSock, buf, sizeof(buf), 0);
+				nBytes = recv(connSock, buf, sizeof(buf), 0); // Receive from socket
 				if (nBytes > 0) {
 					if (!server->handleCommand(connSock, buf)) {
 						log->warn("Failed to successfully handle data");
 					}
 				}
-				else {
+				else { // Failure in socket, shut it down
 					close(connSock);
 
 					/* Remove connection record in server */
@@ -155,7 +153,7 @@ int main(int argc, char **argv)
 						log->warn("Failed remove connection");
 					}
 
-					/* Dencrease event count */
+					/* Decrease event count */
 					struct epoll_event *tmpEvents = new epoll_event[numEvents-1];
 					if (tmpEvents == nullptr) {
 						log->warn("Failed to allocate memory for events");

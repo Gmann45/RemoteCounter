@@ -4,8 +4,6 @@ project(RemoteCounter)
 
 add_executable(RemoteCounter main.cpp Server.cpp)
 
-#configure_file(AppConfig.h.in AppConfig.h)
-
 target_include_directories(RemoteCounter PUBLIC "${PROJECT_BINARY_DIR}")
 
 set(CMAKE_CXX_STANDARD 11)

@@ -1,6 +1,9 @@
 #ifndef __COUNTER_H__
 #define __COUNTER_H__
 
+/*
+	Class for keeping track of count
+*/
 class Counter {
 	public:
 		Counter(int count) {

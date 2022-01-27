@@ -8,6 +8,9 @@
 #include <string.h>
 #include <stdio.h>
 
+/*
+	Wrapper for logging to syslog
+*/
 class Log {
 	public:
 		static Log* getInstance() {

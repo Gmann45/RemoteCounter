@@ -39,7 +39,7 @@ bool Server::init(int port)
 	serverSockAddr.sin_port = htons(port);
 	serverSockAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	log->info("Trying to bind socket...");
-	while (1) {
+	while (1) { // Continue to try and bind to socket
 		if (bind(serverSock, (struct sockaddr*) &serverSockAddr, sizeof(serverSockAddr)) == -1) {
 			if (bindTime++ > SERVER__BIND_TIMEOUT_S) {
 				log->warn("Failed to bind socket");
@@ -114,6 +114,7 @@ void Server::updateCountOnSocket(int sock)
 	std::string msg(std::to_string(counter->getCount()));
 	msg += "\r\n";
 
+	/* Send message to socket */
 	nBytes = send(sock, msg.c_str(), msg.length() + 1, 0);
 	if (nBytes <= 0) {
 		log->warn("Failed to send data on sock %d", sock);
@@ -126,6 +127,7 @@ void Server::updateCountOnConnections(void)
 	std::string msg(std::to_string(counter->getCount()));
 	msg += "\r\n";
 
+	/* Loop through sockets and send message */
 	for (int sock : connections) {
 		nBytes = send(sock, msg.c_str(), msg.length() + 1, 0);
 		if (nBytes <= 0) {
@@ -143,7 +145,7 @@ bool Server::handleCommand(int sock, char *buf)
 
 	log->info("Command : %s", cmd.c_str());
 
-	if (cmd.find(SERVER__CMD__INCR) != std::string::npos) {
+	if (cmd.find(SERVER__CMD__INCR) != std::string::npos) { // Found command
 		if (cmd.find("\r\n", cmd.length() - 2) != std::string::npos) { // Validation check
 			while(!ss.eof()) {
 				ss >> tmpString;
@@ -158,10 +160,10 @@ bool Server::handleCommand(int sock, char *buf)
 		}
 	}
 	else if (cmd.find(SERVER__CMD__DECR) != std::string::npos) {
-		if (cmd.find("\r\n", cmd.length() - 2) != std::string::npos) { // Validation check
+		if (cmd.find("\r\n", cmd.length() - 2) != std::string::npos) {
 			while(!ss.eof()) {
 				ss >> tmpString;
-				if (std::stringstream(tmpString) >> tmpInt) { // Contains valid integer
+				if (std::stringstream(tmpString) >> tmpInt) {
 					counter->decCount(tmpInt);
 
 					updateCountOnConnections();
@@ -172,8 +174,8 @@ bool Server::handleCommand(int sock, char *buf)
 		}
 	}
 	else if (cmd.find(SERVER__CMD__OUTPUT) != std::string::npos) {
-		if (cmd.find("\r\n", cmd.length() - 2) != std::string::npos) { // Validation check
-			updateCountOnSocket(sock);
+		if (cmd.find("\r\n", cmd.length() - 2) != std::string::npos) {
+			updateCountOnSocket(sock); // Send message to socket
 		}
 	}
 	else {
